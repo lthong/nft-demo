@@ -1,16 +1,21 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Route } from 'react-router-dom';
 import routerPath from '@/libraries/routerPath';
-import 'normalize.css';
-import '@/stylesheet/app.scss';
+import { ChakraProvider, Spinner } from '@chakra-ui/react';
+
+const Home = lazy(() => import('@/components/Home'));
 
 const App = () => {
   return (
-    <BrowserRouter basename={process.env.PUBLIC_PATH}>
-      <Route exact path={routerPath.ROOT}>
-        <div className='app'>HI</div>
-      </Route>
-    </BrowserRouter>
+    <ChakraProvider>
+      <BrowserRouter basename={process.env.PUBLIC_PATH}>
+        <Suspense fallback={<Spinner />}>
+          <Route exact path={routerPath.ROOT}>
+            <Home />
+          </Route>
+        </Suspense>
+      </BrowserRouter>
+    </ChakraProvider>
   );
 };
 
