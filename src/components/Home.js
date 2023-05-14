@@ -17,16 +17,38 @@ import {
   WrapItem,
   Flex,
   Center,
+  ButtonGroup,
+  Button,
 } from '@chakra-ui/react';
+import { useHistory } from 'react-router-dom';
+import Web3 from 'web3';
+
+const web3 = new Web3(Web3.givenProvider);
+const randomAccount = web3.eth.accounts.create(); // for demo
+
+const ownerTypeEnum = {
+  default: 'default',
+  random: 'random',
+};
+const ownerAddressEnum = {
+  default: process.env.OWNER_KEY,
+  random: randomAccount.address,
+};
+const ownerTypeConfig = Object.keys(ownerTypeEnum).map((key) => ({
+  key,
+  label: `${key} address`,
+}));
 
 const Home = () => {
   const [data, setData] = useState([]);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [isAPIFailed, setIsAPIFailed] = useState(false);
+  const [ownerType, setOwnerType] = useState(ownerTypeEnum.default);
   const moreDataObserverRef = useRef(null);
   const timerRef = useRef(null);
+  const history = useHistory();
 
-  const getData = useCallback((query) => {
+  const getData = useCallback((query = {}) => {
     getAssets(query)
       .then((res) => {
         const newData = res?.data?.assets || [];
@@ -55,7 +77,10 @@ const Home = () => {
             (entry) => {
               if (entry[0].isIntersecting && !!hasNextPage && !isAPIFailed) {
                 timerRef.current = setTimeout(() => {
-                  getData({ cursor: hasNextPage });
+                  getData({
+                    cursor: hasNextPage,
+                    owner: ownerAddressEnum[ownerType],
+                  });
                 }, 600);
               }
             },
@@ -67,7 +92,7 @@ const Home = () => {
 
       return null;
     },
-    [data, getData, hasNextPage, isAPIFailed]
+    [data, getData, hasNextPage, isAPIFailed, ownerType]
   );
 
   const cards = useMemo(
@@ -77,12 +102,17 @@ const Home = () => {
           <Card
             ref={getAssetRef}
             data-asset-index={index}
-            w='200px'
+            w={{ sm: '200px', base: '42vw' }}
             h='250px'
             bg='gray.200'
             margin='5px'
             cursor='pointer'
             _hover={{ backgroundColor: '#BEE3F8' }}
+            onClick={() => {
+              history.push(
+                `/detail/${item.asset_contract?.address}/${item.token_id}`
+              );
+            }}
           >
             <CardBody overflow='hidden' paddingBottom='0'>
               <Center>
@@ -96,7 +126,7 @@ const Home = () => {
                 />
               </Center>
             </CardBody>
-            <CardFooter justify='center'>
+            <CardFooter justify='center' paddingTop='0'>
               <Text
                 fontSize='1.2rem'
                 as='b'
@@ -111,20 +141,20 @@ const Home = () => {
           </Card>
         </WrapItem>
       )),
-    [data, getAssetRef]
-  );
-
-  const loading = useMemo(
-    () => (data.length === 0 || hasNextPage) && <Spinner />,
-    [data, hasNextPage]
+    [data, getAssetRef, history]
   );
 
   useEffect(() => {
-    getData();
+    getData({
+      owner: ownerAddressEnum[ownerType],
+    });
+  }, [getData, ownerType]);
+
+  useEffect(() => {
     return () => {
       clearTimeout(timerRef.current);
     };
-  }, [getData]);
+  }, []);
 
   return (
     <Flex direction='column' justify='center'>
@@ -137,9 +167,34 @@ const Home = () => {
       >
         All Assets
       </Text>
+      <ButtonGroup
+        variant='outline'
+        spacing='6'
+        display='flex'
+        justifyContent='center'
+        marginBottom='20px'
+      >
+        {ownerTypeConfig.map(({ key, label }) => (
+          <Button
+            key={key}
+            isActive={ownerType === key}
+            onClick={() => {
+              setOwnerType(ownerTypeEnum[key]);
+            }}
+            textTransform='capitalize'
+          >
+            {label}
+          </Button>
+        ))}
+      </ButtonGroup>
       <Wrap justify='center'>{cards}</Wrap>
       <Flex justify='center' margin='20px 0'>
-        {loading}
+        {data.length === 0 && (
+          <Text fontSize='1.4rem' align='center' color='gray.400'>
+            No Data
+          </Text>
+        )}
+        {hasNextPage && <Spinner />}
       </Flex>
     </Flex>
   );
