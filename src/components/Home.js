@@ -41,7 +41,7 @@ const ownerTypeConfig = Object.keys(ownerTypeEnum).map((key) => ({
 
 const Home = () => {
   const [data, setData] = useState([]);
-  const [hasNextPage, setHasNextPage] = useState(false);
+  const [nextPage, setNextPage] = useState(null);
   const [isAPIFailed, setIsAPIFailed] = useState(false);
   const [ownerType, setOwnerType] = useState(ownerTypeEnum.default);
   const moreDataObserverRef = useRef(null);
@@ -57,7 +57,7 @@ const Home = () => {
         } else {
           setData(newData);
         }
-        setHasNextPage(res?.data?.next);
+        setNextPage(res?.data?.next);
         setIsAPIFailed(false);
       })
       .catch(() => {
@@ -75,10 +75,10 @@ const Home = () => {
           moreDataObserverRef.current?.disconnect();
           moreDataObserverRef.current = new IntersectionObserver(
             (entry) => {
-              if (entry[0].isIntersecting && !!hasNextPage && !isAPIFailed) {
+              if (entry[0].isIntersecting && !!nextPage && !isAPIFailed) {
                 timerRef.current = setTimeout(() => {
                   getData({
-                    cursor: hasNextPage,
+                    cursor: nextPage,
                     owner: ownerAddressEnum[ownerType],
                   });
                 }, 600);
@@ -92,7 +92,7 @@ const Home = () => {
 
       return null;
     },
-    [data, getData, hasNextPage, isAPIFailed, ownerType]
+    [data, getData, nextPage, isAPIFailed, ownerType]
   );
 
   const cards = useMemo(
@@ -194,7 +194,7 @@ const Home = () => {
             No Data
           </Text>
         )}
-        {hasNextPage && <Spinner />}
+        {nextPage && <Spinner />}
       </Flex>
     </Flex>
   );
