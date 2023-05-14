@@ -4,6 +4,7 @@ import routerPath from '@/libraries/routerPath';
 import { ChakraProvider, Spinner } from '@chakra-ui/react';
 
 const Home = lazy(() => import('@/components/Home'));
+const Detail = lazy(() => import('@/components/Detail'));
 
 const App = () => {
   return (
@@ -12,6 +13,9 @@ const App = () => {
         <Suspense fallback={<Spinner />}>
           <Route exact path={routerPath.ROOT}>
             <Home />
+          </Route>
+          <Route path={routerPath.DETAIL}>
+            <Detail />
           </Route>
         </Suspense>
       </BrowserRouter>
