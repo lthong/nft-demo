@@ -20,5 +20,5 @@ This project is a simple demo for NFT list development. Every page support the v
 #### To install this application, follow these steps:
 
 1. Clone the repository.
-2. Install dependencies with `npm install`.
-3. Start the application with `npm start`.
+2. Install dependencies with `yarn install`.
+3. Start the application with `yarn start`.
