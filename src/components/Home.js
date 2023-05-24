@@ -17,54 +17,40 @@ import {
   WrapItem,
   Flex,
   Center,
-  ButtonGroup,
-  Button,
 } from '@chakra-ui/react';
 import { useHistory } from 'react-router-dom';
-import Web3 from 'web3';
-
-const web3 = new Web3(Web3.givenProvider);
-const randomAccount = web3.eth.accounts.create(); // for demo
-
-const ownerTypeEnum = {
-  default: 'default',
-  random: 'random',
-};
-const ownerAddressEnum = {
-  default: process.env.OWNER_KEY,
-  random: randomAccount.address,
-};
-const ownerTypeConfig = Object.keys(ownerTypeEnum).map((key) => ({
-  key,
-  label: `${key} address`,
-}));
+import useMetaMaskAccount from '@/hooks/useMetaMaskAccount';
 
 const Home = () => {
   const [data, setData] = useState([]);
   const [nextPage, setNextPage] = useState(null);
   const [isAPIFailed, setIsAPIFailed] = useState(false);
-  const [ownerType, setOwnerType] = useState(ownerTypeEnum.default);
   const moreDataObserverRef = useRef(null);
   const timerRef = useRef(null);
   const history = useHistory();
 
   const getData = useCallback((query = {}) => {
-    getAssets(query)
-      .then((res) => {
-        const newData = res?.data?.assets || [];
-        if (query?.cursor) {
-          setData((preData) => [...preData, ...newData]);
-        } else {
-          setData(newData);
-        }
-        setNextPage(res?.data?.next);
-        setIsAPIFailed(false);
-      })
-      .catch(() => {
-        setData([]);
-        setIsAPIFailed(true);
-      });
+    if (query.owner) {
+      getAssets(query)
+        .then((res) => {
+          const newData = res?.data?.assets || [];
+          if (query?.cursor) {
+            setData((preData) => [...preData, ...newData]);
+          } else {
+            setData(newData);
+          }
+          setNextPage(res?.data?.next);
+          setIsAPIFailed(false);
+        })
+        .catch(() => {
+          setData([]);
+          setIsAPIFailed(true);
+        });
+    }
   }, []);
+  const { owner } = useMetaMaskAccount({
+    handleGetOwnerAddressCallBack: getData,
+  });
 
   const getAssetRef = useCallback(
     (node) => {
@@ -79,7 +65,7 @@ const Home = () => {
                 timerRef.current = setTimeout(() => {
                   getData({
                     cursor: nextPage,
-                    owner: ownerAddressEnum[ownerType],
+                    owner,
                   });
                 }, 600);
               }
@@ -92,7 +78,7 @@ const Home = () => {
 
       return null;
     },
-    [data, getData, nextPage, isAPIFailed, ownerType]
+    [data, getData, nextPage, isAPIFailed, owner]
   );
 
   const cards = useMemo(
@@ -145,12 +131,6 @@ const Home = () => {
   );
 
   useEffect(() => {
-    getData({
-      owner: ownerAddressEnum[ownerType],
-    });
-  }, [getData, ownerType]);
-
-  useEffect(() => {
     return () => {
       clearTimeout(timerRef.current);
     };
@@ -167,26 +147,6 @@ const Home = () => {
       >
         All Assets
       </Text>
-      <ButtonGroup
-        variant='outline'
-        spacing='6'
-        display='flex'
-        justifyContent='center'
-        marginBottom='20px'
-      >
-        {ownerTypeConfig.map(({ key, label }) => (
-          <Button
-            key={key}
-            isActive={ownerType === key}
-            onClick={() => {
-              setOwnerType(ownerTypeEnum[key]);
-            }}
-            textTransform='capitalize'
-          >
-            {label}
-          </Button>
-        ))}
-      </ButtonGroup>
       <Wrap justify='center'>{cards}</Wrap>
       <Flex justify='center' margin='20px 0'>
         {data.length === 0 && (
